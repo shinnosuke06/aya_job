@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <link rel="apple-touch-icon" href="aya_job.png">
-    <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>勤怠・給料管理アプリ</title>
@@ -225,6 +223,73 @@
             <div class="flex justify-center space-x-4">
                 <button onclick="closeConfirm()" class="px-6 py-2 bg-gray-200 rounded-full text-gray-700 font-bold">キャンセル</button>
                 <button id="confirmOkBtn" class="px-6 py-2 bg-pink-500 rounded-full text-white font-bold shadow-md">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- バックアップ出力（エクスポート）モーダル -->
+    <div id="exportModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl p-5 w-full max-w-md shadow-2xl max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-3 border-b pb-2">
+                <h2 class="text-lg font-bold text-gray-800 flex items-center">
+                    <i class="fa-solid fa-floppy-disk text-pink-500 mr-2"></i> バックアップの保存
+                </h2>
+                <button onclick="closeModal('exportModal')" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+            </div>
+            
+            <p class="text-xs text-gray-600 mb-3 leading-relaxed">
+                下の <strong class="text-pink-600">「データをすべてコピー」</strong> を押して、スマホのメモ帳やLINE等に貼り付けて保存してください。<br>
+                （対応ブラウザなら「ファイルとしてダウンロード」も可能です）
+            </p>
+
+            <div class="mb-3">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-xs font-bold text-gray-600" id="exportFileName">backup.json</span>
+                    <span class="text-[10px] text-gray-400">バックアップ文字列</span>
+                </div>
+                <textarea id="exportTextarea" readonly class="w-full h-36 border border-gray-300 rounded-lg p-2.5 text-xs font-mono bg-gray-50 focus:outline-none focus:border-pink-500 select-all"></textarea>
+            </div>
+
+            <div class="space-y-2">
+                <button id="btnCopyExport" onclick="copyExportData()" class="w-full py-3 bg-pink-500 hover:bg-pink-600 text-white font-bold rounded-xl shadow transition flex items-center justify-center">
+                    <i class="fa-solid fa-copy mr-2"></i> データをすべてコピーする
+                </button>
+                <button onclick="downloadExportFile()" class="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl border border-gray-300 text-xs transition flex items-center justify-center">
+                    <i class="fa-solid fa-download mr-1.5"></i> ファイルとしてダウンロード
+                </button>
+            </div>
+
+            <div class="mt-4 pt-2 border-t text-center">
+                <button onclick="closeModal('exportModal')" class="px-6 py-1.5 bg-gray-200 text-gray-700 rounded-full text-xs font-bold hover:bg-gray-300">
+                    閉じる
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- バックアップ復元（テキスト貼り付け）モーダル -->
+    <div id="importTextModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl p-5 w-full max-w-md shadow-2xl max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-3 border-b pb-2">
+                <h2 class="text-lg font-bold text-gray-800 flex items-center">
+                    <i class="fa-solid fa-paste text-blue-500 mr-2"></i> テキストから復元
+                </h2>
+                <button onclick="closeModal('importTextModal')" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+            </div>
+
+            <p class="text-xs text-gray-600 mb-2 leading-relaxed">
+                メモ帳などに保存したバックアップテキストをここに貼り付けて「復元を実行」を押してください。
+            </p>
+
+            <textarea id="importPasteTextarea" placeholder="ここにバックアップデータを貼り付けてください" class="w-full h-40 border border-gray-300 rounded-lg p-2.5 text-xs font-mono bg-white focus:outline-none focus:border-blue-500 mb-3"></textarea>
+
+            <div class="flex space-x-2">
+                <button onclick="closeModal('importTextModal')" class="flex-1 py-2.5 bg-gray-200 text-gray-700 rounded-xl font-bold text-sm">
+                    キャンセル
+                </button>
+                <button onclick="executeTextImport()" class="flex-1 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold text-sm shadow">
+                    復元を実行
+                </button>
             </div>
         </div>
     </div>
@@ -1988,15 +2053,18 @@
                             <i class="fa-solid fa-circle-check text-green-500 mr-1"></i> 祝日・振替休日: オンラインから自動取得済
                         </div>
                         <p class="text-xs text-gray-500 mb-3">端末を変える時などにファイルとして保存・読み込みができます。</p>
-                        <div class="flex gap-2">
-                            <button onclick="exportData()" class="flex-1 py-2 bg-gray-100 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-200">
-                                <i class="fa-solid fa-download mr-1"></i> 保存(出力)
+                        <div class="flex gap-2 mb-2">
+                            <button onclick="exportData()" class="flex-1 py-2.5 bg-pink-500 hover:bg-pink-600 text-white font-bold rounded-lg shadow text-xs transition">
+                                <i class="fa-solid fa-download mr-1"></i> バックアップの保存
                             </button>
-                            <label class="flex-1 py-2 bg-gray-100 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-200 text-center cursor-pointer">
-                                <i class="fa-solid fa-upload mr-1"></i> 読込(入力)
+                            <label class="flex-1 py-2.5 bg-gray-100 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-200 text-center cursor-pointer text-xs font-bold">
+                                <i class="fa-solid fa-upload mr-1"></i> ファイルから読込
                                 <input type="file" id="fileInput" accept=".json" class="hidden" onchange="importData(event)">
                             </label>
                         </div>
+                        <button onclick="openModal('importTextModal')" class="w-full py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold transition">
+                            <i class="fa-solid fa-paste mr-1"></i> コピーしたテキストから復元
+                        </button>
                         <button onclick="resetToInitialDefaults()" class="w-full mt-4 py-2 text-xs text-red-500 hover:text-red-700 bg-red-50/50 hover:bg-red-50 rounded-lg border border-red-200 transition">
                             <i class="fa-solid fa-rotate-left mr-1"></i> アプリを初期状態（仕事1非表示／仕事2時給1300円）に初期化
                         </button>
@@ -2148,14 +2216,134 @@
             });
         }
 
+        let currentExportJson = '';
+        let currentExportFilename = '';
+
+        function downloadExportFile() {
+            if (!currentExportJson) return;
+            try {
+                const blob = new Blob([currentExportJson], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const dlNode = document.createElement('a');
+                dlNode.href = url;
+                dlNode.download = currentExportFilename;
+                document.body.appendChild(dlNode);
+                dlNode.click();
+                setTimeout(() => {
+                    if (dlNode.parentElement) dlNode.remove();
+                    URL.revokeObjectURL(url);
+                }, 300);
+            } catch (e) {
+                showAlert("このブラウザ環境ではファイルの直接ダウンロードが制限されています。\n画面の「データをすべてコピーする」ボタンでメモ帳などに貼り付けて保存してください。");
+            }
+        }
+
+        function copyExportData() {
+            const textarea = document.getElementById('exportTextarea');
+            if (!textarea) return;
+            textarea.focus();
+            textarea.select();
+            textarea.setSelectionRange(0, 999999);
+            
+            let success = false;
+            try {
+                success = document.execCommand('copy');
+            } catch (e) {
+                success = false;
+            }
+
+            const btn = document.getElementById('btnCopyExport');
+            if (success) {
+                if (btn) {
+                    btn.innerHTML = '<i class="fa-solid fa-check mr-2"></i> コピー完了しました！';
+                    btn.className = "w-full py-3 bg-green-600 text-white font-bold rounded-xl shadow transition flex items-center justify-center";
+                    setTimeout(() => {
+                        if (btn) {
+                            btn.innerHTML = '<i class="fa-solid fa-copy mr-2"></i> データをすべてコピーする';
+                            btn.className = "w-full py-3 bg-pink-500 hover:bg-pink-600 text-white font-bold rounded-xl shadow transition flex items-center justify-center";
+                        }
+                    }, 3000);
+                }
+                showAlert("バックアップデータをコピーしました！\n\nスマホの「メモ帳」アプリやLINEのKeep等に貼り付けて保管してください。");
+            } else {
+                showAlert("自動コピーに失敗しました。表示されているテキスト枠内を長押しして「すべて選択」→「コピー」してください。");
+            }
+        }
+
         function exportData() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData));
-            const dlNode = document.createElement('a');
-            dlNode.setAttribute("href", dataStr);
-            dlNode.setAttribute("download", "kintai_data.json");
-            document.body.appendChild(dlNode);
-            dlNode.click();
-            dlNode.remove();
+            try {
+                currentExportJson = JSON.stringify(appData, null, 2);
+                const d = new Date();
+                const dateStr = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}`;
+                currentExportFilename = `kintai_backup_${dateStr}.json`;
+
+                const textarea = document.getElementById('exportTextarea');
+                const filenameEl = document.getElementById('exportFileName');
+                if (textarea) textarea.value = currentExportJson;
+                if (filenameEl) filenameEl.innerText = currentExportFilename;
+
+                // バックアップ画面を表示
+                openModal('exportModal');
+            } catch (e) {
+                showAlert("バックアップの作成に失敗しました: " + e.message);
+            }
+        }
+
+        function applyImportedData(importedData) {
+            appData = importedData;
+            
+            // 過去バージョンデータの安全補完（マイグレーション）
+            if (!appData.accounts) appData.accounts = [];
+            if (!appData.expenseItems) appData.expenseItems = [];
+            if (!appData.expenseRecords) appData.expenseRecords = {};
+
+            appData.expenseItems.forEach(item => {
+                if (item.isDeleted === undefined) item.isDeleted = false;
+            });
+
+            if (!appData.settings.job1) appData.settings.job1 = {};
+            if (!appData.settings.job2) appData.settings.job2 = {};
+
+            if (!appData.settings.job1.customWorkDays) appData.settings.job1.customWorkDays = [];
+            if (appData.settings.job1.hidden === undefined) appData.settings.job1.hidden = false;
+            if (appData.settings.job2.hidden === undefined) appData.settings.job2.hidden = false;
+            if (!appData.settings.job2.timeStep) appData.settings.job2.timeStep = 15;
+
+            if (!appData.settingsHistory || appData.settingsHistory.length === 0) {
+                appData.settingsHistory = [{
+                    id: 1,
+                    effectiveFrom: "2000-01",
+                    savedAt: "読込データ基準設定",
+                    job1: JSON.parse(JSON.stringify(appData.settings.job1)),
+                    job2: JSON.parse(JSON.stringify(appData.settings.job2)),
+                    note: "以前の保存データからの復元"
+                }];
+            }
+
+            cleanupFutureData(); 
+            saveData();
+            render();
+            showAlert("データを安全に読み込み、復元しました！");
+        }
+
+        function executeTextImport() {
+            const text = document.getElementById('importPasteTextarea').value.trim();
+            if (!text) return showAlert("貼り付けるデータが入力されていません。");
+
+            showConfirm("現在のデータは上書きされます。よろしいですか？", () => {
+                try {
+                    const parsed = JSON.parse(text);
+                    if (parsed && parsed.settings && parsed.workRecords) {
+                        applyImportedData(parsed);
+                        closeModal('importTextModal');
+                        document.getElementById('importPasteTextarea').value = '';
+                    } else {
+                        showAlert("貼り付けられたデータ形式が正しくありません。");
+                    }
+                } catch (e) {
+                    showAlert("JSONデータの解析に失敗しました。正しいバックアップテキストかご確認ください。");
+                }
+            });
         }
 
         function importData(event) {
@@ -2168,41 +2356,7 @@
                     try {
                         const importedData = JSON.parse(e.target.result);
                         if(importedData && importedData.settings && importedData.workRecords) {
-                            appData = importedData;
-                            
-                            // 過去バージョンデータの安全補完（マイグレーション）
-                            if (!appData.accounts) appData.accounts = [];
-                            if (!appData.expenseItems) appData.expenseItems = [];
-                            if (!appData.expenseRecords) appData.expenseRecords = {};
-
-                            appData.expenseItems.forEach(item => {
-                                if (item.isDeleted === undefined) item.isDeleted = false;
-                            });
-
-                            if (!appData.settings.job1) appData.settings.job1 = {};
-                            if (!appData.settings.job2) appData.settings.job2 = {};
-
-                            if (!appData.settings.job1.customWorkDays) appData.settings.job1.customWorkDays = [];
-                            if (appData.settings.job1.hidden === undefined) appData.settings.job1.hidden = false;
-                            if (appData.settings.job2.hidden === undefined) appData.settings.job2.hidden = false;
-                            if (!appData.settings.job2.timeStep) appData.settings.job2.timeStep = 15;
-
-                            // 過去データに履歴がない場合、読み込んだ設定を基準設定として履歴化
-                            if (!appData.settingsHistory || appData.settingsHistory.length === 0) {
-                                appData.settingsHistory = [{
-                                    id: 1,
-                                    effectiveFrom: "2000-01",
-                                    savedAt: "読込データ基準設定",
-                                    job1: JSON.parse(JSON.stringify(appData.settings.job1)),
-                                    job2: JSON.parse(JSON.stringify(appData.settings.job2)),
-                                    note: "以前の保存データからの復元"
-                                }];
-                            }
-
-                            cleanupFutureData(); 
-                            saveData();
-                            render();
-                            showAlert("データを安全に読み込み、現在の仕様に合わせて復元しました！");
+                            applyImportedData(importedData);
                         } else {
                             showAlert("ファイルの形式が正しくありません。");
                         }
