@@ -18,14 +18,14 @@
         .paid-item { opacity: 0.6; }
     </style>
 </head>
-<body class="text-gray-800 pb-20">
+<body class="text-gray-800 pb-20 select-none">
 
     <header class="bg-pink-500 text-white p-4 shadow-md sticky top-0 z-10 flex justify-between items-center">
         <h1 class="text-xl font-bold"><i class="fa-solid fa-piggy-bank mr-2"></i>給与＆家計管理</h1>
         <div class="flex items-center bg-pink-600 rounded-full px-3 py-1">
-            <button onclick="changeMonth(-1)" class="px-2 text-white"><i class="fa-solid fa-chevron-left"></i></button>
+            <button onclick="changeMonth(-1)" class="px-2 text-white hover:opacity-80 active:scale-95 transition" aria-label="先月"><i class="fa-solid fa-chevron-left"></i></button>
             <span id="headerMonth" class="px-2 font-bold min-w-[80px] text-center"></span>
-            <button onclick="changeMonth(1)" class="px-2 text-white"><i class="fa-solid fa-chevron-right"></i></button>
+            <button onclick="changeMonth(1)" class="px-2 text-white hover:opacity-80 active:scale-95 transition" aria-label="来月"><i class="fa-solid fa-chevron-right"></i></button>
         </div>
     </header>
 
@@ -48,37 +48,56 @@
         </div>
     </nav>
 
-    <!-- 勤怠入力モーダル -->
     <div id="workModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl p-5 w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div class="bg-white rounded-2xl p-5 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">
             <div class="flex justify-between items-center mb-4 border-b pb-2">
                 <h2 id="modalDateTitle" class="text-xl font-bold text-pink-600">日付</h2>
-                <button onclick="closeModal('workModal')" class="text-gray-500 text-2xl">&times;</button>
+                <button onclick="closeModal('workModal')" class="text-gray-500 text-2xl hover:text-gray-700">&times;</button>
             </div>
             <input type="hidden" id="modalDate">
             
-            <div class="mb-4 bg-pink-50 p-4 rounded-xl border border-pink-100">
+            <!-- 両方の仕事が非表示の場合の案内 -->
+            <div id="modalBothJobsHiddenNotice" class="hidden mb-4 bg-gray-50 p-3 rounded-xl border border-gray-200 text-center text-xs text-gray-500">
+                <i class="fa-solid fa-eye-slash mr-1 text-gray-400"></i> 仕事1・仕事2はともに非表示に設定されています。<br>
+                <span class="text-[11px] text-pink-500">（「設定」タブから表示設定を変更できます）</span>
+            </div>
+
+            <!-- 仕事1入力部 -->
+            <div id="modalJob1Wrapper" class="mb-4 bg-pink-50 p-4 rounded-xl border border-pink-100">
                 <h3 class="font-bold text-pink-700 mb-2 border-b border-pink-200 pb-1" id="lbl-job1-name">仕事1</h3>
-                <div class="mb-3">
-                    <label class="block text-sm text-gray-700 mb-1">出勤状況</label>
-                    <div class="flex space-x-2">
-                        <button type="button" id="btn-status-none" onclick="setJob1Status('')" class="flex-1 py-2 rounded border border-gray-300 bg-white text-gray-500 text-sm">未設定</button>
-                        <button type="button" id="btn-status-work" onclick="setJob1Status('work')" class="flex-1 py-2 rounded border border-pink-300 bg-white text-pink-600 text-sm">出勤</button>
-                        <button type="button" id="btn-status-absent" onclick="setJob1Status('absent')" class="flex-1 py-2 rounded border border-red-300 bg-white text-red-600 text-sm">欠勤</button>
+                <div id="modalJob1Content">
+                    <div class="mb-3">
+                        <label class="block text-sm text-gray-700 mb-1">出勤状況</label>
+                        <div class="flex space-x-2">
+                            <button type="button" id="btn-status-none" onclick="setJob1Status('')" class="flex-1 py-2 rounded border border-gray-300 bg-white text-gray-500 text-sm">未設定</button>
+                            <button type="button" id="btn-status-work" onclick="setJob1Status('work')" class="flex-1 py-2 rounded border border-pink-300 bg-white text-pink-600 text-sm">出勤</button>
+                            <button type="button" id="btn-status-absent" onclick="setJob1Status('absent')" class="flex-1 py-2 rounded border border-red-300 bg-white text-red-600 text-sm">欠勤</button>
+                        </div>
+                        <input type="hidden" id="modalJob1Status">
                     </div>
-                    <input type="hidden" id="modalJob1Status">
-                </div>
-                <div>
-                    <label class="block text-sm text-gray-700 mb-1">残業時間 (時間)</label>
-                    <input type="number" id="modalJob1Overtime" class="w-full border border-gray-300 rounded p-2 focus:outline-none focus:border-pink-500" step="0.5" min="0">
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">残業時間 (時間)</label>
+                        <input type="number" id="modalJob1Overtime" class="w-full border border-gray-300 rounded p-2 focus:outline-none focus:border-pink-500" step="0.5" min="0">
+                    </div>
                 </div>
             </div>
 
-            <div class="mb-4 bg-orange-50 p-4 rounded-xl border border-orange-100">
-                <h3 class="font-bold text-orange-700 mb-2 border-b border-orange-200 pb-1" id="lbl-job2-name">仕事2</h3>
-                <div>
-                    <label class="block text-sm text-gray-700 mb-1">実働時間 (時間)</label>
-                    <input type="number" id="modalJob2Hours" class="w-full border border-gray-300 rounded p-2 focus:outline-none focus:border-orange-500" step="0.5" min="0">
+            <!-- 仕事2入力部 -->
+            <div id="modalJob2Wrapper" class="mb-4 bg-orange-50 p-4 rounded-xl border border-orange-100">
+                <div class="flex justify-between items-center mb-2 border-b border-orange-200 pb-1">
+                    <h3 class="font-bold text-orange-700" id="lbl-job2-name">仕事2</h3>
+                    <button type="button" onclick="addJob2ShiftRow()" class="text-xs bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded shadow font-bold">
+                        <i class="fa-solid fa-plus mr-1"></i>シフト追加
+                    </button>
+                </div>
+                <div id="modalJob2Content">
+                    <p id="job2StepNotice" class="text-[11px] text-gray-500 mb-2">※時間は15分刻みです。17:00〜1:00など日をまたぐ場合は翌日として自動計算します。</p>
+                    <div id="job2ShiftsList" class="space-y-2 mb-3">
+                        <!-- JSで動的にシフト入力行を挿入 -->
+                    </div>
+                    <div id="job2CalcSummary" class="text-xs text-orange-800 bg-orange-100/60 p-2 rounded border border-orange-200 hidden">
+                        <!-- リアルタイム計算結果表示 -->
+                    </div>
                 </div>
             </div>
 
@@ -107,9 +126,8 @@
         </div>
     </div>
 
-    <!-- 支払い項目設定モーダル -->
     <div id="expenseItemModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl p-5 w-full max-w-md">
+        <div class="bg-white rounded-2xl p-5 w-full max-w-md shadow-2xl">
             <div class="flex justify-between items-center mb-4 border-b pb-2">
                 <h2 class="text-xl font-bold text-gray-700" id="ei-title">支払い項目の設定</h2>
                 <button onclick="closeModal('expenseItemModal')" class="text-gray-500 text-2xl">&times;</button>
@@ -150,9 +168,8 @@
         </div>
     </div>
 
-    <!-- 支払い記録入力モーダル -->
     <div id="expenseRecordModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl p-5 w-full max-w-sm text-center">
+        <div class="bg-white rounded-2xl p-5 w-full max-w-sm text-center shadow-2xl">
             <h2 class="text-lg font-bold text-gray-700 mb-2" id="er-name"></h2>
             <p class="text-sm text-gray-500 mb-4" id="er-month"></p>
             <input type="hidden" id="er-id">
@@ -171,9 +188,8 @@
         </div>
     </div>
 
-    <!-- 口座登録モーダル -->
     <div id="accountModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl p-5 w-full max-w-md">
+        <div class="bg-white rounded-2xl p-5 w-full max-w-md shadow-2xl">
             <div class="flex justify-between items-center mb-4 border-b pb-2">
                 <h2 class="text-xl font-bold text-blue-600">口座の登録・編集</h2>
                 <button onclick="closeModal('accountModal')" class="text-gray-500 text-2xl">&times;</button>
@@ -200,9 +216,8 @@
         </div>
     </div>
 
-    <!-- 汎用確認・アラートモーダル -->
     <div id="confirmModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-2xl">
             <div class="text-pink-500 mb-4 text-4xl"><i class="fa-solid fa-circle-exclamation"></i></div>
             <p id="confirmMessage" class="mb-6 text-gray-800 font-bold whitespace-pre-line leading-relaxed"></p>
             <div class="flex justify-center space-x-4">
@@ -213,7 +228,7 @@
     </div>
 
     <div id="alertModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-2xl">
             <p id="alertMessage" class="mb-6 text-gray-800 font-bold whitespace-pre-line"></p>
             <button onclick="closeAlert()" class="px-6 py-2 bg-pink-500 rounded-full text-white font-bold shadow-md w-full">確認</button>
         </div>
@@ -231,14 +246,21 @@
         const defaultData = {
             settings: {
                 job1: { 
-                    name: "エノモト工業", 
-                    dailyWage: 10000, 
-                    overtimeHourlyWage: 1500, 
-                    tax: 40000,
-                    customWorkDays: [] // 特例の出勤日（配列）
+                    name: "", 
+                    dailyWage: "", 
+                    overtimeHourlyWage: "", 
+                    tax: "",
+                    customWorkDays: [], // 特例の出勤日（配列）
+                    hidden: true
                 },
-                job2: { name: "くろちゃん", hourlyWage: 1000 }
+                job2: { 
+                    name: "くろちゃん", 
+                    hourlyWage: 1300,
+                    timeStep: 15,
+                    hidden: false
+                }
             },
+            settingsHistory: [],
             workRecords: {}, 
             accounts: [], 
             expenseItems: [], 
@@ -255,6 +277,46 @@
         if (!appData.settings.job1.customWorkDays) {
             appData.settings.job1.customWorkDays = [];
         }
+        if (appData.settings.job1.hidden === undefined) appData.settings.job1.hidden = true;
+        if (appData.settings.job2.hidden === undefined) appData.settings.job2.hidden = false;
+        if (!appData.settings.job2.timeStep) appData.settings.job2.timeStep = 15;
+        if (!appData.settingsHistory) appData.settingsHistory = [];
+
+        // 旧サンプルデータがブラウザに残っている場合は新しい初期状態へ自動移行
+        if (appData.settings.job1.name === "エノモト工業" || (!appData.settings.job1.name && appData.settings.job2.hourlyWage === 1000)) {
+            appData.settings.job1 = {
+                name: "",
+                dailyWage: "",
+                overtimeHourlyWage: "",
+                tax: "",
+                customWorkDays: [],
+                hidden: true
+            };
+            appData.settings.job2.name = "くろちゃん";
+            appData.settings.job2.hourlyWage = 1300;
+            appData.settings.job2.timeStep = 15;
+            appData.settings.job2.hidden = false;
+            if (appData.settingsHistory.length > 0 && appData.settingsHistory[0].savedAt === "初期設定") {
+                appData.settingsHistory[0].job1 = JSON.parse(JSON.stringify(appData.settings.job1));
+                appData.settingsHistory[0].job2 = JSON.parse(JSON.stringify(appData.settings.job2));
+            }
+            saveData();
+        }
+
+        // 初期履歴が存在しない場合、現在設定を基準の初期履歴として登録（過去すべての月を保護）
+        if (appData.settingsHistory.length === 0) {
+            appData.settingsHistory.push({
+                id: 1,
+                effectiveFrom: "2000-01",
+                savedAt: "初期設定",
+                job1: JSON.parse(JSON.stringify(appData.settings.job1)),
+                job2: JSON.parse(JSON.stringify(appData.settings.job2)),
+                note: "基本設定の初期登録"
+            });
+        }
+        appData.settingsHistory.forEach(h => {
+            if (h.job2 && !h.job2.timeStep) h.job2.timeStep = 15;
+        });
 
         let currentTab = 'home';
         let currentExpenseSubTab = 'list'; 
@@ -272,7 +334,7 @@
                 holidaysData = await res.json();
                 if(currentTab === 'calendar') render();
             } catch (e) {
-                console.log("祝日データの取得に失敗しました");
+                console.log("祝日データの取得に失敗しました (オフライン計算を使用)");
             }
         }
         fetchHolidays();
@@ -447,6 +509,22 @@
         function getMonthString(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; }
         const fmt = (num) => Number(num || 0).toLocaleString();
 
+        // 指定した月（YYYY-MM）に有効だった設定を取得する関数（過去設定の保護）
+        function getSettingsForMonth(targetMonthStr) {
+            if (!appData.settingsHistory || appData.settingsHistory.length === 0) {
+                return appData.settings;
+            }
+            // effectiveFrom が targetMonthStr 以前の履歴の中で、最も新しい年月（および登録順）を適用
+            const sorted = [...appData.settingsHistory].sort((a, b) => {
+                if (a.effectiveFrom !== b.effectiveFrom) {
+                    return b.effectiveFrom.localeCompare(a.effectiveFrom);
+                }
+                return (b.id || 0) - (a.id || 0);
+            });
+            const matched = sorted.find(h => h.effectiveFrom <= targetMonthStr);
+            return matched || sorted[sorted.length - 1] || appData.settings;
+        }
+
         function getPaydayDate(year, month) {
             let d = new Date(year, month, 25);
             while (true) {
@@ -459,17 +537,84 @@
             }
         }
 
+        // 指定した刻み（15分, 30分, 1分）に丸めるヘルパー（HH:MM形式）
+        function roundToStep(timeStr, step = 15) {
+            if (!timeStr) return '';
+            const [hStr, mStr] = timeStr.split(':');
+            let h = parseInt(hStr, 10);
+            let m = parseInt(mStr, 10);
+            if (isNaN(h) || isNaN(m)) return timeStr;
+            if (step <= 1) return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+            
+            const roundedM = Math.round(m / step) * step;
+            if (roundedM >= 60) {
+                h = (h + 1) % 24;
+                m = 0;
+            } else {
+                m = roundedM;
+            }
+            return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        }
+
+        // シフトの勤務時間・深夜時間（22:00〜翌5:00）を分単位で正確に計算
+        function calcShiftDuration(startStr, endStr) {
+            if (!startStr || !endStr) return { totalHours: 0, normalHours: 0, nightHours: 0, valid: false };
+            const [sH, sM] = startStr.split(':').map(Number);
+            const [eH, eM] = endStr.split(':').map(Number);
+            if (isNaN(sH) || isNaN(sM) || isNaN(eH) || isNaN(eM)) return { totalHours: 0, normalHours: 0, nightHours: 0, valid: false };
+
+            const startMin = sH * 60 + sM;
+            let endMin = eH * 60 + eM;
+
+            // 終了時刻が開始時刻以下の場合は翌日と解釈（例: 17:00〜01:00）
+            if (endMin <= startMin) {
+                endMin += 24 * 60;
+            }
+
+            let normalMin = 0;
+            let nightMin = 0;
+
+            // 1分ごとに深夜時間帯（22:00=1320分〜翌5:00=300分）を判定
+            for (let t = startMin; t < endMin; t++) {
+                const mod = t % 1440;
+                if (mod >= 1320 || mod < 300) {
+                    nightMin++;
+                } else {
+                    normalMin++;
+                }
+            }
+
+            return {
+                totalHours: (endMin - startMin) / 60,
+                normalHours: normalMin / 60,
+                nightHours: nightMin / 60,
+                valid: true
+            };
+        }
+
+        // 単一シフトの給料計算（通常時給 + 深夜は時給×1.25、四捨五入）
+        function calcShiftSalary(shiftDur, hourlyWage) {
+            if (!shiftDur || !shiftDur.valid) return 0;
+            const normalPay = shiftDur.normalHours * hourlyWage;
+            const nightPay = shiftDur.nightHours * (hourlyWage * 1.25);
+            return Math.round(normalPay + nightPay);
+        }
+
         function calculateSalary(targetDate) {
             const currentMonthStr = getMonthString(targetDate);
             const prevDate = new Date(targetDate.getFullYear(), targetDate.getMonth() - 1, 1);
             const prevMonthStr = getMonthString(prevDate);
+
+            // 当月・前月に適用されていたそれぞれの設定を取得
+            const currentSet = getSettingsForMonth(currentMonthStr);
+            const prevSet = getSettingsForMonth(prevMonthStr);
 
             // 当月の「暦通りの所定労働日数」を計算
             let scheduledWorkDays = 0;
             const y = targetDate.getFullYear();
             const m = targetDate.getMonth();
             const lastDay = new Date(y, m + 1, 0).getDate();
-            const customDays = appData.settings.job1.customWorkDays || [];
+            const customDays = currentSet.job1.customWorkDays || [];
             
             for (let i = 1; i <= lastDay; i++) {
                 const dateStrForCheck = `${y}-${String(m + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
@@ -477,57 +622,87 @@
                 const dayOfWeek = d.getDay();
                 const isHoliday = getHolidayName(y, m, i) !== "";
 
-                // 特例の出勤日リストに含まれている場合は、曜日や祝日に関わらず出勤日カウント
                 if (customDays.includes(dateStrForCheck)) {
                     scheduledWorkDays++;
                 } else if (!isHoliday && dayOfWeek >= 1 && dayOfWeek <= 5) {
-                    // それ以外は、祝日ではない平日をカウント
                     scheduledWorkDays++;
                 }
             }
 
             let job1PrevAbsent = 0, job1Overtime = 0, prevJob1Overtime = 0;
-            let job2Hours = 0, prevJob2Hours = 0;
+            let job2Hours = 0, job2NightHours = 0;
+            let prevJob2Hours = 0, prevJob2NightHours = 0, prevJob2Salary = 0;
             let totalExtraIncome = 0;
+
+            const prevHourlyWage = prevSet.job2.hourlyWage || currentSet.job2.hourlyWage || 0;
 
             for (const [dateStr, record] of Object.entries(appData.workRecords)) {
                 const month = dateStr.substring(0, 7);
                 
                 // 当月のデータ集計
                 if (month === currentMonthStr) {
-                    if (record.job1) {
-                        if (record.job1.overtime) job1Overtime += parseFloat(record.job1.overtime);
+                    if (record.job1 && record.job1.overtime) job1Overtime += parseFloat(record.job1.overtime);
+                    if (record.job2) {
+                        if (record.job2.shifts && Array.isArray(record.job2.shifts)) {
+                            record.job2.shifts.forEach(shift => {
+                                const dur = calcShiftDuration(shift.start, shift.end);
+                                if (dur.valid) {
+                                    job2Hours += dur.totalHours;
+                                    job2NightHours += dur.nightHours;
+                                }
+                            });
+                        } else if (record.job2.hours) {
+                            job2Hours += parseFloat(record.job2.hours);
+                        }
                     }
-                    if (record.job2 && record.job2.hours) job2Hours += parseFloat(record.job2.hours);
                     if (record.extraIncome && record.extraIncome.amount) totalExtraIncome += parseFloat(record.extraIncome.amount);
                 }
                 
                 // 前月のデータ集計（翌月反映分）
                 if (month === prevMonthStr) {
                     if (record.job1) {
-                        if (record.job1.status === 'absent') {
-                            job1PrevAbsent += 1; // 前月の欠勤日数
-                        }
-                        if (record.job1.overtime) {
-                            prevJob1Overtime += parseFloat(record.job1.overtime); // 前月の残業実績
-                        }
+                        if (record.job1.status === 'absent') job1PrevAbsent += 1;
+                        if (record.job1.overtime) prevJob1Overtime += parseFloat(record.job1.overtime);
                     }
-                    if (record.job2 && record.job2.hours) {
-                        prevJob2Hours += parseFloat(record.job2.hours); // 前月の仕事2実績
+                    if (record.job2) {
+                        if (record.job2.shifts && Array.isArray(record.job2.shifts)) {
+                            record.job2.shifts.forEach(shift => {
+                                const dur = calcShiftDuration(shift.start, shift.end);
+                                if (dur.valid) {
+                                    prevJob2Hours += dur.totalHours;
+                                    prevJob2NightHours += dur.nightHours;
+                                    prevJob2Salary += calcShiftSalary(dur, prevHourlyWage);
+                                }
+                            });
+                        } else if (record.job2.hours) {
+                            // 旧データ（シフト指定なし）の後方互換性
+                            const h = parseFloat(record.job2.hours);
+                            prevJob2Hours += h;
+                            prevJob2Salary += Math.round(h * prevHourlyWage);
+                        }
                     }
                 }
             }
 
-            // 仕事1の給料：(所定労働日数 - 前月欠勤) × 日給 + 前月残業代 - 税金
+            // 仕事1の給料計算（前月設定・当月設定を考慮、未設定や空白は0として計算）
             let job1BaseDays = Math.max(0, scheduledWorkDays - job1PrevAbsent);
-            const job1BaseSalary = job1BaseDays * appData.settings.job1.dailyWage;
-            const job1OvertimePay = prevJob1Overtime * appData.settings.job1.overtimeHourlyWage;
+            const job1DailyRate = parseFloat(currentSet.job1.dailyWage) || 0;
+            const job1BaseSalary = job1BaseDays * job1DailyRate;
+            const job1OvertimeRate = parseFloat(prevSet.job1.overtimeHourlyWage) || parseFloat(currentSet.job1.overtimeHourlyWage) || 0;
+            const job1OvertimePay = prevJob1Overtime * job1OvertimeRate;
             const job1Gross = job1BaseSalary + job1OvertimePay;
+            const job1TaxRate = parseFloat(currentSet.job1.tax) || 0;
             
-            let job1Net = job1Gross > 0 ? Math.max(0, job1Gross - appData.settings.job1.tax) : 0;
+            let job1Net = 0;
+            if (!currentSet.job1.hidden) {
+                job1Net = job1Gross > 0 ? Math.max(0, job1Gross - job1TaxRate) : 0;
+            }
             
-            // 仕事2の給料：前月の実働時間 × 時給
-            const job2Salary = prevJob2Hours * appData.settings.job2.hourlyWage;
+            // 仕事2の給料計算（非表示設定を考慮）
+            let job2FinalSalary = 0;
+            if (!currentSet.job2.hidden) {
+                job2FinalSalary = prevJob2Salary;
+            }
 
             let expFixed = 0, expVar = 0, expCard = 0;
             const curRecs = appData.expenseRecords[currentMonthStr] || {};
@@ -541,23 +716,30 @@
             });
 
             return {
+                set: currentSet,
                 job1: { 
-                    scheduledWorkDays: scheduledWorkDays, // 当月の所定出勤日数
-                    prevAbsent: job1PrevAbsent, // 前月の欠勤数
-                    baseDays: job1BaseDays, // 最終的な計算日数
-                    overtime: job1Overtime, // 当月の残業時間（実績）
-                    paidOvertime: prevJob1Overtime, // 給与に反映される前月の残業時間
+                    hidden: !!currentSet.job1.hidden,
+                    name: currentSet.job1.name || "仕事1",
+                    scheduledWorkDays: scheduledWorkDays,
+                    prevAbsent: job1PrevAbsent,
+                    baseDays: job1BaseDays,
+                    overtime: job1Overtime,
+                    paidOvertime: prevJob1Overtime,
                     net: job1Net, 
-                    tax: appData.settings.job1.tax 
+                    tax: job1TaxRate 
                 },
                 job2: { 
-                    hours: job2Hours, // 当月の仕事2の実績
-                    paidHours: prevJob2Hours, // 給与に反映される前月の仕事2の実績
-                    salary: job2Salary 
+                    hidden: !!currentSet.job2.hidden,
+                    name: currentSet.job2.name || "仕事2",
+                    hours: Math.round(job2Hours * 100) / 100,
+                    nightHours: Math.round(job2NightHours * 100) / 100,
+                    paidHours: Math.round(prevJob2Hours * 100) / 100,
+                    paidNightHours: Math.round(prevJob2NightHours * 100) / 100,
+                    salary: job2FinalSalary 
                 },
                 extraIncome: totalExtraIncome,
                 expenses: { fixed: expFixed, variable: expVar, card: expCard, total: expFixed + expVar + expCard },
-                totalIncome: job1Net + job2Salary + totalExtraIncome
+                totalIncome: (currentSet.job1.hidden ? 0 : job1Net) + (currentSet.job2.hidden ? 0 : job2FinalSalary) + totalExtraIncome
             };
         }
 
@@ -649,8 +831,56 @@
 
         function renderHome() {
             const s = calculateSalary(currentDate);
-            const set = appData.settings;
             const balance = s.totalIncome - s.expenses.total;
+
+            let job1CardHtml = '';
+            if (!s.job1.hidden) {
+                job1CardHtml = `
+                    <div class="bg-white p-4 rounded-xl shadow border-t-2 border-pink-500">
+                        <div class="flex items-center text-pink-600 font-bold mb-2 border-b pb-1"><i class="fa-solid fa-industry mr-2"></i> ${escapeHTML(s.job1.name)}</div>
+                        <div class="text-sm text-gray-600 space-y-1">
+                            <div class="flex justify-between"><span>当月の所定出勤日</span><span>${s.job1.scheduledWorkDays} 日</span></div>
+                            ${s.job1.prevAbsent > 0 ? `<div class="flex justify-between text-red-500"><span>前月欠勤分マイナス</span><span>-${s.job1.prevAbsent} 日</span></div>` : ''}
+                            <div class="flex justify-between"><span>残業代 (前月分: ${s.job1.paidOvertime}h)</span><span>反映済</span></div>
+                            <div class="flex justify-between text-[11px] text-pink-400"><span>※今月実績 (欠勤・残業${s.job1.overtime}h) は翌月反映</span><span></span></div>
+                            <div class="flex justify-between text-red-500"><span>税金目安</span><span>-${fmt(s.job1.tax)} 円</span></div>
+                            <div class="flex justify-between font-bold text-gray-800 pt-1 border-t"><span>予想手取り</span><span>${fmt(s.job1.net)} 円</span></div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            let job2CardHtml = '';
+            if (!s.job2.hidden) {
+                const paidNightNotice = s.job2.paidNightHours > 0 ? `<span class="text-indigo-600 text-xs ml-1 font-semibold">(うち深夜: ${s.job2.paidNightHours}h 🌙)</span>` : '';
+                const currentNightNotice = s.job2.nightHours > 0 ? ` (深夜${s.job2.nightHours}h含む)` : '';
+                job2CardHtml = `
+                    <div class="bg-white p-4 rounded-xl shadow border-t-2 border-orange-500">
+                        <div class="flex items-center text-orange-500 font-bold mb-2 border-b pb-1"><i class="fa-solid fa-utensils mr-2"></i> ${escapeHTML(s.job2.name)}</div>
+                        <div class="text-sm text-gray-600 space-y-1">
+                            <div class="flex justify-between">
+                                <span>計算時間 (前月分: ${s.job2.paidHours}h${paidNightNotice})</span>
+                                <span class="font-bold text-gray-800">${fmt(s.job2.salary)} 円</span>
+                            </div>
+                            <div class="flex justify-between text-[11px] text-orange-400">
+                                <span>※今月実績 ${s.job2.hours}h${currentNightNotice} は翌月支給</span>
+                                <span></span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            let noJobNoticeHtml = '';
+            if (s.job1.hidden && s.job2.hidden) {
+                noJobNoticeHtml = `
+                    <div class="bg-white p-4 rounded-xl shadow text-center text-gray-400 text-sm">
+                        <i class="fa-solid fa-briefcase text-2xl mb-1 text-gray-300 block"></i>
+                        仕事1・仕事2ともにこの月は非表示に設定されています。<br>
+                        <span class="text-xs text-pink-500">「設定」タブから表示を再開できます。</span>
+                    </div>
+                `;
+            }
 
             return `
                 <div class="space-y-4">
@@ -664,25 +894,9 @@
                         </div>
                     </div>
 
-                    <div class="bg-white p-4 rounded-xl shadow">
-                        <div class="flex items-center text-pink-600 font-bold mb-2 border-b pb-1"><i class="fa-solid fa-industry mr-2"></i> ${escapeHTML(set.job1.name)}</div>
-                        <div class="text-sm text-gray-600 space-y-1">
-                            <div class="flex justify-between"><span>当月の所定出勤日</span><span>${s.job1.scheduledWorkDays} 日</span></div>
-                            ${s.job1.prevAbsent > 0 ? `<div class="flex justify-between text-red-500"><span>前月欠勤分マイナス</span><span>-${s.job1.prevAbsent} 日</span></div>` : ''}
-                            <div class="flex justify-between"><span>残業代 (前月分: ${s.job1.paidOvertime}h)</span><span>反映済</span></div>
-                            <div class="flex justify-between text-[11px] text-pink-400"><span>※今月実績 (欠勤・残業${s.job1.overtime}h) は翌月反映</span><span></span></div>
-                            <div class="flex justify-between text-red-500"><span>税金目安</span><span>-${fmt(s.job1.tax)} 円</span></div>
-                            <div class="flex justify-between font-bold text-gray-800 pt-1 border-t"><span>予想手取り</span><span>${fmt(s.job1.net)} 円</span></div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white p-4 rounded-xl shadow">
-                        <div class="flex items-center text-orange-500 font-bold mb-2 border-b pb-1"><i class="fa-solid fa-utensils mr-2"></i> ${escapeHTML(set.job2.name)}</div>
-                        <div class="text-sm text-gray-600 space-y-1">
-                            <div class="flex justify-between"><span>計算時間 (前月分: ${s.job2.paidHours}h)</span><span class="font-bold">${fmt(s.job2.salary)} 円</span></div>
-                            <div class="flex justify-between text-[11px] text-orange-400"><span>※今月実績 ${s.job2.hours}h は翌月支給</span><span></span></div>
-                        </div>
-                    </div>
+                    ${job1CardHtml}
+                    ${job2CardHtml}
+                    ${noJobNoticeHtml}
 
                     ${s.extraIncome > 0 ? `
                     <div class="bg-white p-3 rounded-xl shadow border border-yellow-200">
@@ -761,7 +975,9 @@
 
             const payday = getPaydayDate(y, m);
             const today = new Date();
-            const customDays = appData.settings.job1.customWorkDays || [];
+            const mStr = `${y}-${String(m + 1).padStart(2, '0')}`;
+            const targetSet = getSettingsForMonth(mStr);
+            const customDays = targetSet.job1.customWorkDays || [];
 
             let html = `<div class="bg-white rounded-xl shadow overflow-hidden"><div class="grid grid-cols-7 bg-pink-100 border-b border-pink-200">`;
             ['日', '月', '火', '水', '木', '金', '土'].forEach((day, i) => {
@@ -777,19 +993,46 @@
                 const isCustomWorkDay = customDays.includes(dateStr);
                 
                 let badges = '';
-                if (rec.job1) {
+                if (!targetSet.job1.hidden && rec.job1) {
                     if(rec.job1.status === 'work') badges += `<div class="text-[9px] bg-pink-100 text-pink-700 px-1 rounded mb-0.5 truncate">🏢出勤</div>`;
                     if(rec.job1.status === 'absent') badges += `<div class="text-[9px] bg-red-100 text-red-700 px-1 rounded mb-0.5 truncate">🏢欠勤</div>`;
                     if(rec.job1.overtime > 0) badges += `<div class="text-[9px] bg-purple-100 text-purple-700 px-1 rounded mb-0.5 truncate">残${rec.job1.overtime}h</div>`;
                 }
-                if (rec.job2 && rec.job2.hours > 0) badges += `<div class="text-[9px] bg-orange-100 text-orange-700 px-1 rounded mb-0.5 truncate">🍳${rec.job2.hours}h</div>`;
+
+                // 仕事2のバッジ表示（深夜労働がある場合は月アイコンを表示）
+                if (!targetSet.job2.hidden && rec.job2) {
+                    let totalH = 0;
+                    let hasNight = false;
+
+                    if (rec.job2.shifts && Array.isArray(rec.job2.shifts) && rec.job2.shifts.length > 0) {
+                        rec.job2.shifts.forEach(s => {
+                            const dur = calcShiftDuration(s.start, s.end);
+                            if (dur.valid) {
+                                totalH += dur.totalHours;
+                                if (dur.nightHours > 0) hasNight = true;
+                            }
+                        });
+                    } else if (rec.job2.hours > 0) {
+                        totalH = parseFloat(rec.job2.hours);
+                    }
+
+                    if (totalH > 0) {
+                        const nightBadge = hasNight ? `<i class="fa-solid fa-moon text-indigo-600 ml-0.5 text-[8px]" title="深夜料金適用"></i>` : '';
+                        badges += `
+                            <div class="text-[9px] bg-orange-100 text-orange-700 px-1 rounded mb-0.5 truncate flex items-center justify-between">
+                                <span>🍳${Math.round(totalH * 10) / 10}h</span>
+                                ${nightBadge}
+                            </div>
+                        `;
+                    }
+                }
                 
                 if (rec.extraIncome && rec.extraIncome.amount > 0) {
                     const memo = rec.extraIncome.memo ? `(${escapeHTML(rec.extraIncome.memo)})` : '';
                     badges += `<div class="text-[9px] bg-yellow-100 text-yellow-700 px-1 rounded mb-0.5 truncate">💰${fmt(rec.extraIncome.amount)}${memo}</div>`;
                 }
 
-                let isPaydayIcon = (i === payday) ? `<i class="fa-solid fa-coins text-yellow-500 absolute top-1 right-1 text-xs shadow-sm"></i>` : '';
+                let isPaydayIcon = (i === payday) ? `<i class="fa-solid fa-coins text-yellow-500 absolute top-1 right-1 text-xs shadow-sm" title="給料日"></i>` : '';
                 
                 let dayColor = "text-gray-800";
                 const dayOfWeek = new Date(y, m, i).getDay();
@@ -803,7 +1046,6 @@
                     holidayNameHtml = `<div class="text-[8px] text-red-500 font-bold truncate leading-tight">${escapeHTML(hName)}</div>`;
                 }
 
-                // 設定で追加した特例の出勤日は、休日であっても黒字にする
                 if(isCustomWorkDay) {
                     dayColor = "text-gray-800";
                 }
@@ -827,12 +1069,175 @@
             return html;
         }
 
+        // 刻み（15分・30分・1分）に応じた時・分セレクトボックスのシフト行HTMLを生成
+        function createShiftRowHtml(start = '', end = '', step = 15) {
+            const stepNum = parseInt(step, 10) || 15;
+            
+            // 既存の時間が刻みと合わない場合は丸めて選択状態を決定
+            const normalizedStart = roundToStep(start, stepNum);
+            const normalizedEnd = roundToStep(end, stepNum);
+
+            const [sH, sM] = normalizedStart ? normalizedStart.split(':') : ['', ''];
+            const [eH, eM] = normalizedEnd ? normalizedEnd.split(':') : ['', ''];
+
+            // 時オプション生成 (00 〜 23)
+            let hourOptions = '<option value="">--</option>';
+            for (let h = 0; h < 24; h++) {
+                const hVal = String(h).padStart(2, '0');
+                hourOptions += `<option value="${hVal}">${hVal}時</option>`;
+            }
+
+            // 分オプション生成（15分刻みなら 00, 15, 30, 45 のみ）
+            let minuteOptions = '<option value="">--</option>';
+            for (let m = 0; m < 60; m += stepNum) {
+                const mVal = String(m).padStart(2, '0');
+                minuteOptions += `<option value="${mVal}">${mVal}分</option>`;
+            }
+
+            // 選択属性を付与するヘルパー
+            const applySelected = (optionsHtml, selectedVal) => {
+                if (!selectedVal) return optionsHtml;
+                return optionsHtml.replace(`value="${selectedVal}"`, `value="${selectedVal}" selected`);
+            };
+
+            return `
+                <div class="shift-row flex items-center justify-between gap-1 bg-white p-2 rounded-lg border border-orange-200 shadow-sm text-sm">
+                    <div class="flex-1 flex items-center justify-center gap-1">
+                        <!-- 開始時刻 -->
+                        <div class="flex items-center bg-gray-50 border border-gray-300 rounded px-1.5 py-1 shadow-inner">
+                            <select class="shift-start-h bg-transparent font-bold text-gray-700 text-sm focus:outline-none" onchange="updateJob2ModalSummary()">
+                                ${applySelected(hourOptions, sH)}
+                            </select>
+                            <span class="text-gray-400 font-bold px-0.5">:</span>
+                            <select class="shift-start-m bg-transparent font-bold text-gray-700 text-sm focus:outline-none" onchange="updateJob2ModalSummary()">
+                                ${applySelected(minuteOptions, sM)}
+                            </select>
+                        </div>
+
+                        <span class="text-orange-400 font-bold text-xs px-1">〜</span>
+
+                        <!-- 終了時刻 -->
+                        <div class="flex items-center bg-gray-50 border border-gray-300 rounded px-1.5 py-1 shadow-inner">
+                            <select class="shift-end-h bg-transparent font-bold text-gray-700 text-sm focus:outline-none" onchange="updateJob2ModalSummary()">
+                                ${applySelected(hourOptions, eH)}
+                            </select>
+                            <span class="text-gray-400 font-bold px-0.5">:</span>
+                            <select class="shift-end-m bg-transparent font-bold text-gray-700 text-sm focus:outline-none" onchange="updateJob2ModalSummary()">
+                                ${applySelected(minuteOptions, eM)}
+                            </select>
+                        </div>
+                    </div>
+                    <button type="button" onclick="removeJob2ShiftRow(this)" class="text-red-400 hover:text-red-600 p-1.5 ml-1 transition" title="このシフトを削除">
+                        <i class="fa-solid fa-trash-can text-sm"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        function getActiveTimeStep() {
+            const dStr = document.getElementById('modalDate').value;
+            const targetSet = getSettingsForMonth(dStr ? dStr.substring(0, 7) : getMonthString(currentDate));
+            return parseInt(targetSet.job2?.timeStep, 10) || 15;
+        }
+
+        function addJob2ShiftRow(start = '', end = '') {
+            const container = document.getElementById('job2ShiftsList');
+            const step = getActiveTimeStep();
+            container.insertAdjacentHTML('beforeend', createShiftRowHtml(start, end, step));
+            updateJob2ModalSummary();
+        }
+
+        function removeJob2ShiftRow(btn) {
+            const row = btn.closest('.shift-row');
+            if (row) row.remove();
+            updateJob2ModalSummary();
+        }
+
+        function updateJob2ModalSummary() {
+            const dStr = document.getElementById('modalDate').value;
+            const targetSet = getSettingsForMonth(dStr.substring(0, 7));
+            const hourlyWage = targetSet.job2.hourlyWage || 1000;
+
+            const rows = document.querySelectorAll('#job2ShiftsList .shift-row');
+            let totalH = 0;
+            let normalH = 0;
+            let nightH = 0;
+            let count = 0;
+
+            rows.forEach(row => {
+                const sH = row.querySelector('.shift-start-h').value;
+                const sM = row.querySelector('.shift-start-m').value;
+                const eH = row.querySelector('.shift-end-h').value;
+                const eM = row.querySelector('.shift-end-m').value;
+
+                if (sH && sM && eH && eM) {
+                    const dur = calcShiftDuration(`${sH}:${sM}`, `${eH}:${eM}`);
+                    if (dur.valid) {
+                        totalH += dur.totalHours;
+                        normalH += dur.normalHours;
+                        nightH += dur.nightHours;
+                        count++;
+                    }
+                }
+            });
+
+            const summaryEl = document.getElementById('job2CalcSummary');
+            if (count > 0 && totalH > 0) {
+                const estSalary = calcShiftSalary({ normalHours: normalH, nightHours: nightH, valid: true }, hourlyWage);
+                const nightBadge = nightH > 0 ? `<span class="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-bold ml-1"><i class="fa-solid fa-moon mr-1"></i>深夜 ${Math.round(nightH * 100) / 100}h (×1.25)</span>` : '';
+                
+                summaryEl.innerHTML = `
+                    <div class="flex justify-between items-center font-bold">
+                        <span>実働: ${Math.round(totalH * 100) / 100}時間 ${nightBadge}</span>
+                        <span class="text-orange-700 text-sm">見込: ${fmt(estSalary)}円</span>
+                    </div>
+                `;
+                summaryEl.classList.remove('hidden');
+            } else {
+                summaryEl.innerHTML = '';
+                summaryEl.classList.add('hidden');
+            }
+        }
+
         function openWorkModal(dateStr) {
             document.getElementById('modalDate').value = dateStr;
             const d = new Date(dateStr);
+            const mStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+            const targetSet = getSettingsForMonth(mStr);
+            const step = parseInt(targetSet.job2?.timeStep, 10) || 15;
+
             document.getElementById('modalDateTitle').innerText = `${d.getMonth()+1}月${d.getDate()}日 (${['日','月','火','水','木','金','土'][d.getDay()]})`;
-            document.getElementById('lbl-job1-name').innerText = appData.settings.job1.name;
-            document.getElementById('lbl-job2-name').innerText = appData.settings.job2.name;
+            document.getElementById('lbl-job1-name').innerText = targetSet.job1.name || "仕事1";
+            document.getElementById('lbl-job2-name').innerText = targetSet.job2.name || "仕事2";
+
+            // 刻み案内文の更新
+            const noticeEl = document.getElementById('job2StepNotice');
+            if (noticeEl) {
+                noticeEl.innerText = `※時間は${step}分刻みです。17:00〜1:00など日をまたぐ場合は翌日として自動計算します。`;
+            }
+
+            // 仕事1と仕事2の表示・非表示切替（入力枠ごと完全に非表示）
+            const job1Wrapper = document.getElementById('modalJob1Wrapper');
+            const job2Wrapper = document.getElementById('modalJob2Wrapper');
+            const bothNotice = document.getElementById('modalBothJobsHiddenNotice');
+
+            if (targetSet.job1.hidden) {
+                job1Wrapper.classList.add('hidden');
+            } else {
+                job1Wrapper.classList.remove('hidden');
+            }
+
+            if (targetSet.job2.hidden) {
+                job2Wrapper.classList.add('hidden');
+            } else {
+                job2Wrapper.classList.remove('hidden');
+            }
+
+            if (targetSet.job1.hidden && targetSet.job2.hidden) {
+                bothNotice.classList.remove('hidden');
+            } else {
+                bothNotice.classList.add('hidden');
+            }
 
             const rec = appData.workRecords[dateStr] || {};
             let initStatus = rec.job1?.status || '';
@@ -840,20 +1245,30 @@
             if (!rec.job1 && !rec.job2 && !rec.extraIncome) {
                 const dayOfWeek = d.getDay();
                 const isHoliday = getHolidayName(d.getFullYear(), d.getMonth(), d.getDate());
-                const customDays = appData.settings.job1.customWorkDays || [];
+                const customDays = targetSet.job1.customWorkDays || [];
                 const isCustomWorkDay = customDays.includes(dateStr);
 
-                if (isCustomWorkDay) {
-                    // 特例の出勤日は曜日に関わらず初期値を「出勤」
-                    initStatus = 'work';
-                } else if (!isHoliday && dayOfWeek >= 1 && dayOfWeek <= 5) {
-                    // 祝日ではない平日の場合も初期値を「出勤」
-                    initStatus = 'work';
+                if (!targetSet.job1.hidden) {
+                    if (isCustomWorkDay) {
+                        initStatus = 'work';
+                    } else if (!isHoliday && dayOfWeek >= 1 && dayOfWeek <= 5) {
+                        initStatus = 'work';
+                    }
                 }
             }
             setJob1Status(initStatus);
             document.getElementById('modalJob1Overtime').value = rec.job1?.overtime || '';
-            document.getElementById('modalJob2Hours').value = rec.job2?.hours || '';
+
+            // 仕事2のシフト入力行の復元
+            const shiftsContainer = document.getElementById('job2ShiftsList');
+            shiftsContainer.innerHTML = '';
+            if (rec.job2?.shifts && Array.isArray(rec.job2.shifts) && rec.job2.shifts.length > 0) {
+                rec.job2.shifts.forEach(s => shiftsContainer.insertAdjacentHTML('beforeend', createShiftRowHtml(s.start, s.end, step)));
+            } else {
+                // デフォルトで1行用意
+                shiftsContainer.insertAdjacentHTML('beforeend', createShiftRowHtml('', '', step));
+            }
+            updateJob2ModalSummary();
             
             const extraAmt = rec.extraIncome?.amount || '';
             document.getElementById('modalExtraAmount').value = extraAmt;
@@ -874,7 +1289,9 @@
         }
 
         function requestSaveWorkData() {
-            const ov = document.getElementById('modalJob1Overtime').value;
+            const dateStr = document.getElementById('modalDate').value;
+            const targetSet = getSettingsForMonth(dateStr ? dateStr.substring(0, 7) : getMonthString(currentDate));
+            const ov = (!targetSet.job1.hidden) ? document.getElementById('modalJob1Overtime').value : 0;
             const parsedOv = ov ? parseFloat(ov) : 0;
 
             if (parsedOv > 0) {
@@ -888,21 +1305,75 @@
 
         function executeSaveWorkData() {
             const dateStr = document.getElementById('modalDate').value;
-            const st = document.getElementById('modalJob1Status').value;
-            const ov = document.getElementById('modalJob1Overtime').value;
-            const hr = document.getElementById('modalJob2Hours').value;
+            const targetSet = getSettingsForMonth(dateStr.substring(0, 7));
+            const prevRec = appData.workRecords[dateStr] || {};
+
             const exAmt = document.getElementById('modalExtraAmount').value;
             const exMemo = document.getElementById('modalExtraMemo').value;
 
-            if (!st && !ov && !hr && !exAmt && !exMemo) {
+            // 仕事1のデータ決定（非表示なら既存データを保持、表示中ならフォームの値を取得）
+            let job1Data = prevRec.job1 || null;
+            if (!targetSet.job1.hidden) {
+                const st = document.getElementById('modalJob1Status').value;
+                const ov = document.getElementById('modalJob1Overtime').value;
+                if (st || ov) {
+                    job1Data = { status: st, overtime: ov ? parseFloat(ov) : 0 };
+                } else {
+                    job1Data = null;
+                }
+            }
+
+            // 仕事2のデータ決定（非表示なら既存データを保持、表示中ならフォームの値を取得）
+            let job2Data = prevRec.job2 || null;
+            if (!targetSet.job2.hidden) {
+                const shiftRows = document.querySelectorAll('#job2ShiftsList .shift-row');
+                const validShifts = [];
+                let totalJob2Hours = 0;
+                let totalJob2NightHours = 0;
+
+                shiftRows.forEach(row => {
+                    const sH = row.querySelector('.shift-start-h').value;
+                    const sM = row.querySelector('.shift-start-m').value;
+                    const eH = row.querySelector('.shift-end-h').value;
+                    const eM = row.querySelector('.shift-end-m').value;
+
+                    if (sH && sM && eH && eM) {
+                        const s = `${sH}:${sM}`;
+                        const e = `${eH}:${eM}`;
+                        const dur = calcShiftDuration(s, e);
+                        if (dur.valid) {
+                            validShifts.push({ start: s, end: e });
+                            totalJob2Hours += dur.totalHours;
+                            totalJob2NightHours += dur.nightHours;
+                        }
+                    }
+                });
+
+                if (validShifts.length > 0) {
+                    job2Data = {
+                        shifts: validShifts,
+                        hours: Math.round(totalJob2Hours * 100) / 100,
+                        nightHours: Math.round(totalJob2NightHours * 100) / 100
+                    };
+                } else {
+                    job2Data = null;
+                }
+            }
+
+            const extraIncomeData = (exAmt || exMemo) ? {
+                amount: exAmt ? parseFloat(exAmt) : 0,
+                memo: exMemo
+            } : null;
+
+            if (!job1Data && !job2Data && !extraIncomeData) {
                 delete appData.workRecords[dateStr];
             } else {
-                appData.workRecords[dateStr] = {
-                    job1: { status: st, overtime: ov ? parseFloat(ov) : 0 },
-                    job2: { hours: hr ? parseFloat(hr) : 0 },
-                    extraIncome: { amount: exAmt ? parseFloat(exAmt) : 0, memo: exMemo }
-                };
+                appData.workRecords[dateStr] = {};
+                if (job1Data) appData.workRecords[dateStr].job1 = job1Data;
+                if (job2Data) appData.workRecords[dateStr].job2 = job2Data;
+                if (extraIncomeData) appData.workRecords[dateStr].extraIncome = extraIncomeData;
             }
+
             saveData(); 
             closeModal('workModal'); 
             render();
@@ -982,7 +1453,7 @@
                             </div>
                             <div class="text-base flex justify-between mt-2 pt-2 border-t border-gray-100 font-bold ${isShort ? 'text-red-500' : 'text-gray-800'}">
                                 <span>引落後の予想残高</span>
-                                <span>${fmt(expected)}円 ${isShort ? '<span class="text-[10px] bg-red-100 text-red-600 px-1 rounded ml-1">不足</span>' : ''}</span>
+                                <span>${fmt(expected)}円 ${isShort ? '<span class="text-[10px] bg-red-100 text-red-600 px-1 rounded ml-1 font-bold">残高不足</span>' : ''}</span>
                             </div>
                         </div>
                     `;
@@ -1021,7 +1492,7 @@
                     if(item.type === 'card') { badgeClass = 'bg-purple-100 text-purple-700'; typeName = 'カード'; }
 
                     const acc = appData.accounts.find(a => a.id == item.accountId);
-                    const accName = acc ? acc.name : '未設定';
+                    const accName = acc ? acc.name : '指定なし';
 
                     listHtml += `
                         <div class="bg-white p-3 rounded-xl shadow border border-gray-100 flex flex-col ${rec.isPaid ? 'paid-item bg-gray-50' : ''}">
@@ -1367,6 +1838,8 @@
 
         function renderSettings() {
             const set = appData.settings;
+            const now = new Date();
+            const defaultEffectiveMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
             
             let customDaysHtml = '';
             const customDays = set.job1.customWorkDays || [];
@@ -1380,12 +1853,66 @@
                 `;
             });
 
+            // 設定履歴リストの生成（新しい順）
+            const sortedHistories = [...appData.settingsHistory].sort((a, b) => {
+                if (a.effectiveFrom !== b.effectiveFrom) return b.effectiveFrom.localeCompare(a.effectiveFrom);
+                return (b.id || 0) - (a.id || 0);
+            });
+
+            let historyListHtml = '';
+            if (sortedHistories.length === 0) {
+                historyListHtml = '<p class="text-xs text-gray-400 text-center py-2">変更履歴はありません</p>';
+            } else {
+                sortedHistories.forEach((h, idx) => {
+                    const isBase = h.id === 1 || h.effectiveFrom === '2000-01';
+                    historyListHtml += `
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs space-y-1">
+                            <div class="flex justify-between items-center font-bold text-gray-700 border-b pb-1">
+                                <span class="text-pink-600"><i class="fa-solid fa-clock-rotate-left mr-1"></i>${isBase ? '基準設定 (全期間)' : `${h.effectiveFrom}〜 適用`}</span>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-[10px] text-gray-400 font-normal">${escapeHTML(h.savedAt)}</span>
+                                    ${!isBase ? `<button onclick="deleteSettingsHistory(${h.id})" class="text-red-400 hover:text-red-600 p-1" title="この履歴を削除"><i class="fa-solid fa-trash-can"></i></button>` : ''}
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 pt-1 text-gray-600">
+                                <div>
+                                    <span class="font-bold">仕事1:</span> ${h.job1?.hidden ? '<span class="text-red-500 font-bold">非表示</span>' : escapeHTML(h.job1?.name)}
+                                    ${!h.job1?.hidden ? `<div class="text-[10px] text-gray-400">日給: ${fmt(h.job1?.dailyWage)}円 / 残業: ${fmt(h.job1?.overtimeHourlyWage)}円</div>` : ''}
+                                </div>
+                                <div>
+                                    <span class="font-bold">仕事2:</span> ${h.job2?.hidden ? '<span class="text-red-500 font-bold">非表示</span>' : escapeHTML(h.job2?.name)}
+                                    ${!h.job2?.hidden ? `<div class="text-[10px] text-gray-400">時給: ${fmt(h.job2?.hourlyWage)}円 / 刻み: ${h.job2?.timeStep || 15}分</div>` : ''}
+                                </div>
+                            </div>
+                            ${h.note ? `<div class="text-[10px] text-gray-500 pt-0.5">メモ: ${escapeHTML(h.note)}</div>` : ''}
+                        </div>
+                    `;
+                });
+            }
+
+            const currentTimeStep = parseInt(set.job2.timeStep, 10) || 15;
+
             return `
                 <div class="space-y-4 pb-16">
+                    <!-- 適用開始年月と注意書き -->
+                    <div class="bg-pink-50 p-4 rounded-xl border border-pink-200">
+                        <label class="block font-bold text-pink-700 mb-1"><i class="fa-solid fa-calendar-check mr-1"></i> この設定を反映する開始月</label>
+                        <p class="text-[11px] text-gray-600 mb-2">選択した月以降の計算にのみ反映されます。過去の月の設定・記録はそのまま保持されます。</p>
+                        <input type="month" id="s_effective_from" value="${defaultEffectiveMonth}" class="w-full border border-pink-300 rounded p-2 bg-white text-sm font-bold text-gray-700">
+                    </div>
+
+                    <!-- 仕事1の設定 -->
                     <div class="bg-white p-4 rounded-xl shadow border-t-4 border-pink-400">
-                        <h3 class="font-bold text-pink-600 mb-3 border-b pb-2"><i class="fa-solid fa-industry mr-1"></i> 仕事1の設定</h3>
-                        <div class="space-y-4 text-sm">
-                            <div><label class="block text-gray-700 mb-1">勤め先名</label><input type="text" id="s_job1_name" value="${escapeHTML(set.job1.name)}" class="w-full border rounded p-2"></div>
+                        <div class="flex justify-between items-center mb-3 border-b pb-2">
+                            <h3 class="font-bold text-pink-600"><i class="fa-solid fa-industry mr-1"></i> 仕事1の設定</h3>
+                            <label class="flex items-center space-x-2 cursor-pointer bg-pink-50 px-3 py-1 rounded-full border border-pink-200">
+                                <input type="checkbox" id="s_job1_hidden" ${set.job1.hidden ? 'checked' : ''} onchange="toggleJobSection('job1', this.checked)" class="w-4 h-4 text-pink-500 rounded">
+                                <span class="text-xs font-bold text-pink-700">仕事を非表示にする</span>
+                            </label>
+                        </div>
+                        
+                        <div id="job1_fields" class="space-y-4 text-sm ${set.job1.hidden ? 'opacity-40 pointer-events-none' : ''}">
+                            <div><label class="block text-gray-700 mb-1">勤め先名</label><input type="text" id="s_job1_name" value="${escapeHTML(set.job1.name || '')}" placeholder="例: 株式会社〇〇" class="w-full border rounded p-2"></div>
                             
                             <!-- 特定の出勤日の設定 -->
                             <div class="bg-pink-50 p-3 rounded-lg border border-pink-100">
@@ -1401,20 +1928,57 @@
                             </div>
 
                             <div class="flex gap-2">
-                                <div class="flex-1"><label class="block text-gray-700 mb-1">基本日給</label><input type="number" id="s_job1_daily" value="${set.job1.dailyWage}" class="w-full border rounded p-2"></div>
-                                <div class="flex-1"><label class="block text-gray-700 mb-1">残業時給</label><input type="number" id="s_job1_overtime" value="${set.job1.overtimeHourlyWage}" class="w-full border rounded p-2"></div>
+                                <div class="flex-1"><label class="block text-gray-700 mb-1">基本日給 (円)</label><input type="number" id="s_job1_daily" value="${set.job1.dailyWage !== undefined && set.job1.dailyWage !== null ? set.job1.dailyWage : ''}" placeholder="例: 10000" class="w-full border rounded p-2"></div>
+                                <div class="flex-1"><label class="block text-gray-700 mb-1">残業時給 (円)</label><input type="number" id="s_job1_overtime" value="${set.job1.overtimeHourlyWage !== undefined && set.job1.overtimeHourlyWage !== null ? set.job1.overtimeHourlyWage : ''}" placeholder="例: 1500" class="w-full border rounded p-2"></div>
                             </div>
-                            <div><label class="block text-gray-700 mb-1">税金・控除目安</label><input type="number" id="s_job1_tax" value="${set.job1.tax}" class="w-full border rounded p-2"></div>
+                            <div><label class="block text-gray-700 mb-1">税金・控除目安 (円)</label><input type="number" id="s_job1_tax" value="${set.job1.tax !== undefined && set.job1.tax !== null ? set.job1.tax : ''}" placeholder="例: 40000" class="w-full border rounded p-2"></div>
                         </div>
                     </div>
+
+                    <!-- 仕事2の設定 -->
                     <div class="bg-white p-4 rounded-xl shadow border-t-4 border-orange-400">
-                        <h3 class="font-bold text-orange-500 mb-3 border-b pb-2"><i class="fa-solid fa-utensils mr-1"></i> 仕事2の設定</h3>
-                        <div class="space-y-3 text-sm">
-                            <div><label>勤め先名</label><input type="text" id="s_job2_name" value="${escapeHTML(set.job2.name)}" class="w-full border rounded p-2"></div>
-                            <div><label>時給</label><input type="number" id="s_job2_hourly" value="${set.job2.hourlyWage}" class="w-full border rounded p-2"></div>
+                        <div class="flex justify-between items-center mb-3 border-b pb-2">
+                            <h3 class="font-bold text-orange-500"><i class="fa-solid fa-utensils mr-1"></i> 仕事2の設定</h3>
+                            <label class="flex items-center space-x-2 cursor-pointer bg-orange-50 px-3 py-1 rounded-full border border-orange-200">
+                                <input type="checkbox" id="s_job2_hidden" ${set.job2.hidden ? 'checked' : ''} onchange="toggleJobSection('job2', this.checked)" class="w-4 h-4 text-orange-500 rounded">
+                                <span class="text-xs font-bold text-orange-700">仕事を非表示にする</span>
+                            </label>
+                        </div>
+                        <div id="job2_fields" class="space-y-3 text-sm ${set.job2.hidden ? 'opacity-40 pointer-events-none' : ''}">
+                            <div><label class="block text-gray-700 mb-1">勤め先名</label><input type="text" id="s_job2_name" value="${escapeHTML(set.job2.name || '')}" placeholder="例: くろちゃん" class="w-full border rounded p-2"></div>
+                            <div><label class="block text-gray-700 mb-1">時給 (円)</label><input type="number" id="s_job2_hourly" value="${set.job2.hourlyWage !== undefined && set.job2.hourlyWage !== null ? set.job2.hourlyWage : ''}" placeholder="例: 1300" class="w-full border rounded p-2"></div>
+                            <div>
+                                <label class="block text-gray-700 mb-1 font-semibold"><i class="fa-regular fa-clock mr-1 text-orange-500"></i>勤務時間の刻み単位</label>
+                                <select id="s_job2_timestep" class="w-full border border-orange-200 rounded p-2 bg-white font-bold text-gray-700">
+                                    <option value="15" ${currentTimeStep === 15 ? 'selected' : ''}>15分刻み (00, 15, 30, 45分)</option>
+                                    <option value="30" ${currentTimeStep === 30 ? 'selected' : ''}>30分刻み (00, 30分)</option>
+                                    <option value="1" ${currentTimeStep === 1 ? 'selected' : ''}>1分刻み (00〜59分)</option>
+                                </select>
+                                <p class="text-[10px] text-gray-500 mt-1">※カレンダーでのシフト入力時の「分」の選択肢に反映されます</p>
+                            </div>
                         </div>
                     </div>
-                    <button onclick="saveSettings()" class="w-full py-3 bg-pink-500 text-white font-bold rounded-xl shadow-md">設定を保存</button>
+
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">変更メモ (履歴用・任意)</label>
+                        <input type="text" id="s_change_note" placeholder="例: 仕事2を退職、日給アップなど" class="w-full border border-gray-300 rounded p-2 text-sm bg-white mb-2">
+                    </div>
+
+                    <button onclick="saveSettings()" class="w-full py-3 bg-pink-500 text-white font-bold rounded-xl shadow-md hover:bg-pink-600 transition">
+                        <i class="fa-solid fa-floppy-disk mr-1"></i> この内容で保存して履歴に追加
+                    </button>
+
+                    <!-- 設定変更履歴アコーディオン -->
+                    <div class="bg-white p-4 rounded-xl shadow border-t-4 border-purple-400 mt-6">
+                        <div class="flex justify-between items-center mb-3 border-b pb-2">
+                            <h3 class="font-bold text-gray-700"><i class="fa-solid fa-history mr-1 text-purple-500"></i> 設定の変更履歴</h3>
+                            <span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-bold">${sortedHistories.length}件</span>
+                        </div>
+                        <p class="text-[11px] text-gray-500 mb-3">各年月時点で有効だった給与条件や表示・非表示の履歴です。</p>
+                        <div class="space-y-2 max-h-64 overflow-y-auto pr-1">
+                            ${historyListHtml}
+                        </div>
+                    </div>
 
                     <div class="bg-white p-4 rounded-xl shadow border-t-4 border-gray-400 mt-6">
                         <h3 class="font-bold text-gray-700 mb-2 border-b pb-2"><i class="fa-solid fa-file-export mr-1"></i> データの保存と管理</h3>
@@ -1431,27 +1995,105 @@
                                 <input type="file" id="fileInput" accept=".json" class="hidden" onchange="importData(event)">
                             </label>
                         </div>
+                        <button onclick="resetToInitialDefaults()" class="w-full mt-4 py-2 text-xs text-red-500 hover:text-red-700 bg-red-50/50 hover:bg-red-50 rounded-lg border border-red-200 transition">
+                            <i class="fa-solid fa-rotate-left mr-1"></i> アプリを初期状態（仕事1非表示／仕事2時給1300円）に初期化
+                        </button>
                     </div>
                 </div>
             `;
         }
 
+        function toggleJobSection(jobKey, isHidden) {
+            const el = document.getElementById(`${jobKey}_fields`);
+            if (el) {
+                if (isHidden) {
+                    el.classList.add('opacity-40', 'pointer-events-none');
+                } else {
+                    el.classList.remove('opacity-40', 'pointer-events-none');
+                }
+            }
+        }
+
         function saveSettings() {
-            appData.settings.job1.name = document.getElementById('s_job1_name').value;
-            appData.settings.job1.dailyWage = parseFloat(document.getElementById('s_job1_daily').value) || 0;
-            appData.settings.job1.overtimeHourlyWage = parseFloat(document.getElementById('s_job1_overtime').value) || 0;
-            appData.settings.job1.tax = parseFloat(document.getElementById('s_job1_tax').value) || 0;
-            appData.settings.job2.name = document.getElementById('s_job2_name').value;
-            appData.settings.job2.hourlyWage = parseFloat(document.getElementById('s_job2_hourly').value) || 0;
-            
-            // DOMから出勤日リストを取得して保存
+            const effectiveFrom = document.getElementById('s_effective_from').value;
+            if (!effectiveFrom) return showAlert("反映する開始年月を指定してください");
+
+            const job1Hidden = document.getElementById('s_job1_hidden').checked;
+            const job2Hidden = document.getElementById('s_job2_hidden').checked;
+            const changeNote = document.getElementById('s_change_note').value.trim();
+
             const chips = document.querySelectorAll('.custom-day-chip');
             const customDays = Array.from(chips).map(chip => chip.getAttribute('data-date')).sort();
-            appData.settings.job1.customWorkDays = customDays;
+
+            const dailyVal = document.getElementById('s_job1_daily').value;
+            const otVal = document.getElementById('s_job1_overtime').value;
+            const taxVal = document.getElementById('s_job1_tax').value;
+            const hVal = document.getElementById('s_job2_hourly').value;
+
+            const newJob1 = {
+                name: document.getElementById('s_job1_name').value.trim(),
+                dailyWage: dailyVal !== '' ? parseFloat(dailyVal) : '',
+                overtimeHourlyWage: otVal !== '' ? parseFloat(otVal) : '',
+                tax: taxVal !== '' ? parseFloat(taxVal) : '',
+                customWorkDays: customDays,
+                hidden: job1Hidden
+            };
+
+            const newJob2 = {
+                name: document.getElementById('s_job2_name').value.trim() || "仕事2",
+                hourlyWage: hVal !== '' ? parseFloat(hVal) : '',
+                timeStep: parseInt(document.getElementById('s_job2_timestep').value, 10) || 15,
+                hidden: job2Hidden
+            };
+
+            // 最新の設定を更新
+            appData.settings.job1 = JSON.parse(JSON.stringify(newJob1));
+            appData.settings.job2 = JSON.parse(JSON.stringify(newJob2));
+
+            // 保存日時
+            const d = new Date();
+            const savedAt = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+
+            // 同じ effectiveFrom の履歴があれば上書き、なければ新規追加
+            const existingIdx = appData.settingsHistory.findIndex(h => h.effectiveFrom === effectiveFrom && h.id !== 1);
+            const historyItem = {
+                id: existingIdx > -1 ? appData.settingsHistory[existingIdx].id : Date.now(),
+                effectiveFrom: effectiveFrom,
+                savedAt: savedAt,
+                job1: newJob1,
+                job2: newJob2,
+                note: changeNote || (existingIdx > -1 ? "設定の更新" : "設定の新規保存")
+            };
+
+            if (existingIdx > -1) {
+                appData.settingsHistory[existingIdx] = historyItem;
+            } else {
+                appData.settingsHistory.push(historyItem);
+            }
 
             saveData(); 
-            showAlert("設定を保存しました");
+            showAlert(`${effectiveFrom} 以降の設定として保存し、履歴に記録しました！`);
             render();
+        }
+
+        function resetToInitialDefaults() {
+            showConfirm("アプリを初期状態にリセットしますか？\n（仕事1: 非表示・各項目空白\n仕事2: くろちゃん・時給1300円・15分刻み）", () => {
+                localStorage.removeItem('kintaiAppData');
+                appData = JSON.parse(JSON.stringify(defaultData));
+                cleanupFutureData();
+                initializeMonthExpenses(currentDate);
+                saveData();
+                render();
+                showAlert("初期状態にリセットしました！");
+            });
+        }
+
+        function deleteSettingsHistory(id) {
+            showConfirm("この履歴を削除しますか？\n（削除すると、その期間はひとつ前の履歴設定で計算されます）", () => {
+                appData.settingsHistory = appData.settingsHistory.filter(h => h.id !== id);
+                saveData();
+                render();
+            });
         }
 
         function openAccountModal(id = null) {
@@ -1526,17 +2168,39 @@
                         if(importedData && importedData.settings && importedData.workRecords) {
                             appData = importedData;
                             
+                            // 過去バージョンデータの安全補完（マイグレーション）
+                            if (!appData.accounts) appData.accounts = [];
+                            if (!appData.expenseItems) appData.expenseItems = [];
+                            if (!appData.expenseRecords) appData.expenseRecords = {};
+
                             appData.expenseItems.forEach(item => {
                                 if (item.isDeleted === undefined) item.isDeleted = false;
                             });
-                            if (!appData.settings.job1.customWorkDays) {
-                                appData.settings.job1.customWorkDays = [];
+
+                            if (!appData.settings.job1) appData.settings.job1 = {};
+                            if (!appData.settings.job2) appData.settings.job2 = {};
+
+                            if (!appData.settings.job1.customWorkDays) appData.settings.job1.customWorkDays = [];
+                            if (appData.settings.job1.hidden === undefined) appData.settings.job1.hidden = false;
+                            if (appData.settings.job2.hidden === undefined) appData.settings.job2.hidden = false;
+                            if (!appData.settings.job2.timeStep) appData.settings.job2.timeStep = 15;
+
+                            // 過去データに履歴がない場合、読み込んだ設定を基準設定として履歴化
+                            if (!appData.settingsHistory || appData.settingsHistory.length === 0) {
+                                appData.settingsHistory = [{
+                                    id: 1,
+                                    effectiveFrom: "2000-01",
+                                    savedAt: "読込データ基準設定",
+                                    job1: JSON.parse(JSON.stringify(appData.settings.job1)),
+                                    job2: JSON.parse(JSON.stringify(appData.settings.job2)),
+                                    note: "以前の保存データからの復元"
+                                }];
                             }
 
                             cleanupFutureData(); 
                             saveData();
                             render();
-                            showAlert("データを読み込みました！");
+                            showAlert("データを安全に読み込み、現在の仕様に合わせて復元しました！");
                         } else {
                             showAlert("ファイルの形式が正しくありません。");
                         }
